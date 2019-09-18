@@ -1,17 +1,14 @@
-import com.opencsv.CSVParser;
 import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -38,37 +35,32 @@ public class Generator {
 
     public static void main(String[] args) throws IOException {
         String csvPath = "src\\main\\resources\\GAZR.csv";
-        String outDir = "src\\main\\resources\\out";
+        String outDir = "src\\main\\resources\\generated";
         Generator generator = new Generator(csvPath, outDir);
         generator.readFile();
-        generator.generate(100, 10, 30, true);
+        generator.generate(149, 1, 10, false);
     }
 
-    public void generate(int learnLen, int resultLen, int count, boolean printDate) throws IOException {
+    public void generate(int learnLen, int resultLen, int step, boolean printDate) throws IOException {
 
-        totalFiles += count;
 
-        for (int i = 0; i < rows.size(); i += rows.size() / count) {
+        final int allLen = learnLen + resultLen;
+        totalFiles += (rows.size() - allLen) / step;
+
+        for (int i = 0; (i + allLen) < rows.size(); i += step) {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append(outDir.toString()).append("\\");
             stringBuilder.append(dataName).append('_');
             stringBuilder.append(learnLen).append('%').append(resultLen).append('_');
             stringBuilder.append(nowCreated.get()).append(".csv");
 
-            writeFile(stringBuilder.toString(), learnLen, resultLen, i, printDate);
+            writeFile(stringBuilder.toString(), learnLen, resultLen, i);
         }
 
     }
 
     public void readFile() {
         try {
-            Files.walk(outDir).forEach(path -> {
-                try {
-                    Files.delete(path);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
             final CSVReader csvReader = new CSVReader(new FileReader(csvPath.toFile()));
             final String[] headers = csvReader.readNext();
             int dateColumnPos = -1;
@@ -97,45 +89,27 @@ public class Generator {
         }
     }
 
-    private void writeFile(String outPath, int learnLen, int resultLen, int startPoint, boolean printDate) throws IOException {
+    private void writeFile(String outPath, int learnLen, int resultLen, int startPoint) throws IOException {
 
         final File outFile = new File(outPath);
         outFile.createNewFile();
-        try (final FileWriter writer = new FileWriter(outPath);
-             final CSVWriter csvWriter = new CSVWriter(writer)) {
+        try (final FileWriter writer = new FileWriter(outPath)) {
             final int iLeft = startPoint + learnLen;
             final int iRight = startPoint + learnLen + resultLen;
-            if (printDate) {
-                csvWriter.writeNext(new String[]{dateColumnName, valueColumnName});
-                for (int i = startPoint; i < iLeft; i++) {
-                    writeRowWithDate(csvWriter, startPoint + i);
-                }
-                for (int i = iLeft; i < iRight; i++) {
-                    writeRowWithDate(csvWriter, startPoint + i);
-                }
-            } else {
-                csvWriter.writeNext(new String[]{valueColumnName});
-                for (int i = startPoint; i < iLeft; i++) {
-                    writeRow(csvWriter, startPoint + i);
-                }
-                for (int i = iLeft; i < iRight; i++) {
-                    writeRow(csvWriter, startPoint + i);
-                }
+            for (int i = startPoint; i < iLeft - 1; i++) {
+                writer.write(rows.get(i)[valuePos] + " ");
             }
+            writer.write(rows.get(iLeft - 1)[valuePos]);
+            writer.write(";");
+            for (int i = iLeft; i < iRight - 1; i++) {
+                writer.write(rows.get(i)[valuePos] + " ");
+            }
+            writer.write(rows.get(iRight - 1)[valuePos]);
         } catch (Exception e) {
-            outFile.deleteOnExit();
-            if (!(e instanceof IndexOutOfBoundsException)) throw new RuntimeException("file writing error", e);
+            throw new RuntimeException("file writing error", e);
         } finally {
             log.info("created : " + nowCreated.incrementAndGet() + " of total : " + totalFiles);
         }
-    }
-
-    private void writeRow(CSVWriter csvWriter, int i) throws Exception {
-        csvWriter.writeNext(new String[]{rows.get(i)[valuePos]});
-    }
-
-    private void writeRowWithDate(CSVWriter csvWriter, int i) throws Exception {
-        csvWriter.writeNext(new String[]{rows.get(i)[datePos], rows.get(i)[valuePos]});
     }
 
     public Generator(String csvPath, String outDir) {
