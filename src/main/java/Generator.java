@@ -18,13 +18,10 @@ public class Generator {
 
     private final Path csvPath;
     private final Path outDir;
-    private final String dataName;
 
     private String dateColumnName = "Date";
     private String valueColumnName = "Value";
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy");
-
-    private SimpleDateFormat simpleDateFrmatOut = new SimpleDateFormat("MM.yyyy");
 
     private List<String[]> rows;
     private int datePos;
@@ -35,26 +32,30 @@ public class Generator {
 
     public static void main(String[] args) throws IOException {
         String csvPath = "src\\main\\resources\\GAZR.csv";
-        String outDir = "src\\main\\resources\\generated";
+        String outDir = "E:\\Daniil\\YandexDisk\\Папка успеха\\learning_data";
         Generator generator = new Generator(csvPath, outDir);
         generator.readFile();
-        generator.generate(149, 1, 10, false);
+        generator.generate(200, 10, 1);
+
     }
 
-    public void generate(int learnLen, int resultLen, int step, boolean printDate) throws IOException {
-
+    public void generate(int learnLen, int resultLen, int step) throws IOException {
 
         final int allLen = learnLen + resultLen;
         totalFiles += (rows.size() - allLen) / step;
 
-        for (int i = 0; (i + allLen) < rows.size(); i += step) {
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append(outDir.toString()).append("\\");
-            stringBuilder.append(dataName).append('_');
-            stringBuilder.append(learnLen).append('%').append(resultLen).append('_');
-            stringBuilder.append(nowCreated.get()).append(".csv");
+        final String[] split = csvPath.toString().split("[/\\\\]");
+        final String dataName = split[split.length - 1].replaceAll("\\.csv", "");
 
-            writeFile(stringBuilder.toString(), learnLen, resultLen, i);
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(outDir.toString()).append("\\");
+        stringBuilder.append(dataName).append('_');
+        stringBuilder.append(learnLen).append('%').append(resultLen).append('_');
+
+        new File(stringBuilder.toString()).mkdir();
+
+        for (int i = 0; (i + allLen) < rows.size(); i += step) {
+            writeFile(stringBuilder.toString() + "\\" + nowCreated.get() + ".txt", learnLen, resultLen, i);
         }
 
     }
@@ -120,8 +121,6 @@ public class Generator {
         }
         this.csvPath = csv;
         this.outDir = out;
-        final String[] split = csvPath.split("[/\\\\]");
-        this.dataName = split[split.length - 1].replaceAll("\\.csv", "");
     }
 
     public void setDateColumnName(String dateColumnName) {
