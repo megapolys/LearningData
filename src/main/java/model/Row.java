@@ -14,7 +14,7 @@ public class Row {
     public final String max;
     public final String delta;
 
-    public Row(LocalDate date, String open, String close, String min, String max, String delta) {
+    private Row(LocalDate date, String open, String close, String min, String max, String delta) {
         this.date = date;
         this.open = open;
         this.close = close;
@@ -26,12 +26,16 @@ public class Row {
     public static Row of(String date, String open, String close, String min, String max, String delta) {
         return new Row(
             LocalDate.parse(date, dateFormatter),
-            open,
-            close,
-            min,
-            max,
-            delta
+            toPointSeparator(open),
+            toPointSeparator(close),
+            toPointSeparator(min),
+            toPointSeparator(max),
+            toPointSeparator(delta)
         );
+    }
+
+    private static String toPointSeparator(String f) {
+        return f.replace(",", ".");
     }
 
     public String get(Headers.Header header) {
