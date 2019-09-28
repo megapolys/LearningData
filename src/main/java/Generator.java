@@ -1,6 +1,8 @@
+import model.Headers;
 import model.Model;
 import view.SimpleInFileView;
 import view.View;
+import writer.ImmutableGeneratorOptions;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -30,7 +32,7 @@ public class Generator {
         generator.init();
         generator.generate(200, 10, 1, 2000);
         generator.generateChecksData(200, 10, 1, 2000);
-
+        ImmutableGeneratorOptions.builder().separatePoint(2000).addHeaders(Headers.Header.CLOSE).build();
     }
     public Generator(String csvFile, String outDir, Model model, View view) {
         if (!new File(csvFile).isFile() || !new File(outDir).isDirectory()) {
