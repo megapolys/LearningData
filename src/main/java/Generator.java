@@ -24,15 +24,19 @@ public class Generator {
     public static void main(String[] args) throws IOException {
         String csvPath = "src\\main\\resources\\GAZR.csv";
 //        String outDir = "E:\\Daniil\\YandexDisk\\Java\\LearningData\\src\\main\\resources\\generated";
-//        String outDir = "E:\\Daniil\\YandexDisk\\Папка успеха\\learning_data";
-        String outDir = "E:\\Daniil\\YandexDisk\\Java\\LearningData\\src\\main\\resources\\out";
+        String outDir = "E:\\Daniil\\YandexDisk\\Папка успеха\\learning_data";
+        String outDirProject = "E:\\Daniil\\YandexDisk\\Java\\LearningData\\src\\main\\resources\\out";
         final Model model = new Model();
         final View view = new SimpleInFileView();
-        Generator generator = new Generator(csvPath, outDir, model, view);
-        generator.init();
-        generator.generate(200, 10, 1, 2000);
-        generator.generateChecksData(200, 10, 1, 2000);
-        ImmutableGeneratorOptions.builder().separatePoint(2000).addHeaders(Headers.Header.CLOSE).build();
+
+        final File dir = new File("E:\\валютные пары");
+        final File[] files = dir.listFiles(file -> file.getName().endsWith(".csv") && file.getName().length() == 11);
+        for (File file : files) {
+            Generator generator = new Generator(file.getPath(), outDir, model, view);
+            generator.init();
+            generator.generate(200, 10, 1, 2000);
+            generator.generateChecksData(200, 10, 1, 2000, outDirProject);
+        }
     }
     public Generator(String csvFile, String outDir, Model model, View view) {
         if (!new File(csvFile).isFile() || !new File(outDir).isDirectory()) {
@@ -71,7 +75,7 @@ public class Generator {
         log.info("created : " + nowCreated + " of total : " + totalLines);
     }
 
-    public void generateChecksData(int learnLen, int resultLen, int step, int separator) throws IOException {
+    public void generateChecksData(int learnLen, int resultLen, int step, int separator, String resultDir) throws IOException {
         final int allLen = learnLen + resultLen;
         totalLines += (model.rows.size() - allLen) / step;
 
@@ -79,7 +83,11 @@ public class Generator {
         stringBuilder.append("\\").append(learnLen).append('%').append(resultLen);
         final String pathname = stringBuilder.toString() + "_" + step + "_";
         final File dataFile = new File(pathname + "check.txt");
-        final File resultFile = new File(pathname + "result.txt");
+        File resultFile = new File(pathname + "result.txt");
+        if (resultDir != null) {
+            final String fileNameResult = createDirAndGetName().toString();
+            resultFile = new File(resultDir,  fileNameResult.substring(fileNameResult.lastIndexOf("\\")) + "_" + resultFile.getName());
+        }
         dataFile.createNewFile();
         resultFile.createNewFile();
 
